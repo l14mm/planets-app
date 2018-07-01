@@ -1,15 +1,13 @@
 import React, { Component } from 'react';
-import logo from './logo.svg';
 import './App.css';
-import PropTypes from 'prop-types';
-import { withStyles } from '@material-ui/core/styles';
+import { BrowserRouter, Switch, Link, Route } from 'react-router-dom';
+import { withStyles, createMuiTheme, MuiThemeProvider, FlatButton, RaisedButton, getMuiTheme, LightRawTheme } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
-import { createMuiTheme } from '@material-ui/core/styles';
 import TouchRipple from '@material-ui/core/ButtonBase/TouchRipple';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
@@ -21,8 +19,9 @@ import CardMedia from '@material-ui/core/CardMedia';
 import CardHeader from '@material-ui/core/CardHeader';
 import ListIcon from '@material-ui/icons/List';
 import IconButton from '@material-ui/core/IconButton';
+import PlanetCard from './components/PlanetCard';
 
-
+const apiUrl = 'http://planetsapi20180630123940.azurewebsites.net/';
 
 const theme = createMuiTheme({
   palette: {
@@ -50,17 +49,44 @@ const styles = {
     background: 'linear-gradient(45deg, #0F2027 5%, #2C5364 90%)',
     color: 'white',
   },
-  marsHeader: {
-    color: 'white',
-  },
+  // marsHeader: {
+  //   color: 'white',
+  // },
   earthHeader: {
     background: 'linear-gradient(45deg, #0F2027 5%, #2C5364 90%)',
     color: 'white',
   },
-  learnMoreButton: {
-    background: 'black',
-    color: 'white',
-  }
+  
+  style1planetCard:  {
+    display: 'flex', 
+    flexDirection: 'row', 
+    flex: '2 1 0%',
+    margin: '20px',
+    textAlign: 'left',
+    flex: 4,
+    margin: '20px',
+    height: '100%',
+  },
+  style1media: {display:'block'},
+  style1image: {display:'inline-block', height:'500px', width:'500px'},
+  style1header: {backgroundColor:'white', color:'black',display:'block'},
+  style1content: {backgroundColor:'white',color:'black',display:'block'},
+  style1info: {fontSize:'12px',paddingBottom:'2px',display:'block'},
+  style1description: {fontSize:'12px'},
+  style1actions: {backgroundColor:'white',color:'black',display:'block'},
+
+  style2planetCard:  {
+    width:'300px', 
+    margin: '2px',
+    textAlign: 'left',
+    fontSize: '0px'
+  },
+  style2image: {width: '100%'},
+  style2header: {backgroundColor:'black', color:'white'},
+  style2content: {backgroundColor:'black',color:'white'},
+  style2info: {fontSize:'12px',paddingBottom:'2px'},
+  style2description: {fontSize:'12px'},
+  style2actions: {backgroundColor:'black',color:'white'},
 };
 
 class App extends Component {
@@ -68,158 +94,88 @@ class App extends Component {
     super(props);
 
     this.state = {
-      planetNames: [
-        'Mars',
-        'Earth',
-        'Jupiter',
-        'Saturn',
-        'Neptune',
-      ],
-      selectedPlanet: {
-        name: "Earth",
-        image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/97/The_Earth_seen_from_Apollo_17.jpg/1197px-The_Earth_seen_from_Apollo_17.jpg',
-        distance: 2,
-        mass: 10,
-        diameter: 100,
-      },
-      viewMode: 1,
-      planets: null
+      viewMode: 0,
+      selectedPlanet: null,
+      planets: null,
     };
     this.onPlanetClick.bind(this);
     this.ChangeView.bind(this);
     this.RetrievePlanets.bind(this);
     this.RetrievePlanets();
+    this.onPlanetClick("earth");
   }
 
-  RetrievePlanets() {
-    this.setState({planets: []});
-  }
-
-  onPlanetClick(planet) {
-    this.setState({
-      selectedPlanet: {
-        name: planet,
-        image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/97/The_Earth_seen_from_Apollo_17.jpg/1197px-The_Earth_seen_from_Apollo_17.jpg',
-        distance: 2,
-        mass: 10,
-        diameter: 100,
-      },
-    });
+  onPlanetClick(planetName) {
+    return fetch(`${apiUrl}api/planets/${planetName}`)
+      .then(response => response.json())
+      .then((responseJson) => {
+        this.setState({ selectedPlanet: responseJson });
+      })
+      .catch((error) => {
+        console.error(error);
+      });
   }
 
   ChangeView(newMode) {
-    this.setState({viewMode: newMode});
-    console.log('view mode: ' + this.state.viewMode);
+    this.setState({ viewMode: newMode });
+  }
+
+  RetrievePlanets() {
+    return fetch(`${apiUrl}api/planets/getall`)
+      .then(response => response.json())
+      .then((responseJson) => {
+        this.setState({ planets: responseJson });
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+  }
+
+  planetItems(classes) {
+    return this.state.planets === null ? null
+      : this.state.planets.map((planet, i) => (
+        this.state.viewMode === 0 ? (
+          <div>
+            <ListItem onClick={() => this.onPlanetClick(planet.name)} type="button" key={i} className="planet-container" button>
+              <ListItemText>
+                <p>
+                  {planet.name}
+                </p>
+              </ListItemText>
+            </ListItem>
+            <Divider />
+          </div>
+        ) : (
+          <span style={{ padding: '5px' }}>
+            <PlanetCard
+              classes={{
+                planetCard: classes.style2planetCard,
+                image: classes.style2image,
+                header: classes.style2header,
+                content: classes.style2content,
+                info: classes.style2info,
+                description: classes.style2description,
+                actions: classes.style2actions,
+              }}
+              planet={planet}
+              index={i}
+              onPlanetClick={this.onPlanetClick}
+            />
+          </span>)
+      ));
   }
 
   render() {
     const { classes } = this.props;
-
-    const planetItems = this.state.planets === null ? null 
-    : this.state.planets.map((planet, i) => (
-      this.state.viewMode === 0 ? (
-      <div>
-      <ListItem onClick={() => this.onPlanetClick(planet.name)} type="button" key={i} className="planet-container" button>
-      <ListItemText>
-        <p>
-          {planet.name}
-        </p>
-        </ListItemText>
-      </ListItem>
-      <Divider />
-      </div>
-      )
-      : this.state.viewMode === 1 ?
-      (<span style={{padding:'5px'}}>
-        <Card onClick={() => this.onPlanetClick(planet)} type="button" key={i} className="planet-container-card" style={{width:'250px'}}>
-        <CardMedia src={planet.image}>
-        <img className="planet-image"
-        src={planet.image} />
-        </CardMedia>
-        <CardHeader title={planet.name} classes={{title:classes.marsHeader}} size='20px' style={{backgroundColor:'black', color:'white'}}/>
-        <CardContent style={{backgroundColor:'black',color:'white'}}>
-        <p className="planet-distance" style={{fontSize:'12px'}}>
-          Distance from sun: {planet.distance}
-        </p>
-        <p className="planet-mass" style={{fontSize:'12px'}}>
-          Mass: {planet.mass}
-        </p>
-        <p className="planet-diameter" style={{fontSize:'12px'}}>
-          Diameter: {planet.diameter}
-        </p>
-        </CardContent>
-        <CardActions style={{backgroundColor:'black',color:'white'}}>
-          <a href="https://en.wikipedia.org/wiki/Earth" target="_blank"
-          style={{textDecoration:'none'}}>
-            <Button size="small" className={classes.learnMoreButton}>
-              Learn More
-            </Button>
-          </a>
-        </CardActions>
-        </Card>
-      </span>)
-      : this.state.viewMode === 2 ?
-      (<span style={{padding:'5px'}}>
-        <Card onClick={() => this.onPlanetClick(planet)} type="button" key={i} className="planet-container-card" style={{width:'300px',height:'600px'}} className={classes.earthCard}>
-        <CardHeader title={planet.name} size='20px'/>
-        <CardMedia src={planet.image}>
-        <img className="planet-image"
-        src={planet.image} />
-        </CardMedia>
-        <CardContent>
-        <p className="planet-distance" style={{fontSize:'12px'}}>
-          Distance from sun: {planet.distance}
-        </p>
-        <p className="planet-mass" style={{fontSize:'12px'}}>
-          Mass: {planet.mass}
-        </p>
-        <p className="planet-diameter" style={{fontSize:'12px'}}>
-          Diameter: {planet.diameter}
-        </p>
-        </CardContent>
-        <CardActions>
-          <a href="https://en.wikipedia.org/wiki/Earth" target="_blank"
-          style={{textDecoration:'none'}}>
-            <Button size="small" color="primary">
-              Learn More
-            </Button>
-          </a>
-        </CardActions>
-        </Card>
-      </span>)
-      : 
-      (<span style={{padding:'5px'}}>
-        <Card onClick={() => this.onPlanetClick(planet)} type="button" key={i} className="planet-container-card" style={{width:'100%'}}>
-        <CardHeader title={planet.name} size='20px'/>
-        <CardMedia src={planet.image}>
-        <img className="planet-image"
-        src={planet.image} />
-        </CardMedia>
-        <CardContent>
-        <p className="planet-distance" style={{fontSize:'12px'}}>
-          Distance from sun: {planet.distance}
-        </p>
-        <p className="planet-mass" style={{fontSize:'12px'}}>
-          Mass: {planet.mass}
-        </p>
-        <p className="planet-diameter" style={{fontSize:'12px'}}>
-          Diameter: {planet.diameter}
-        </p>
-        </CardContent>
-        <CardActions>
-          <a href="https://en.wikipedia.org/wiki/Earth" target="_blank"
-          style={{textDecoration:'none'}}>
-            <Button size="small" color="primary">
-              Learn More
-            </Button>
-          </a>
-        </CardActions>
-        </Card>
-      </span>)
-    ));
-
     return (
-      <div className="App" style={{backgroundColor:'rgb(242,242,242)'}}>
+      <div className="App">
+        {/* <main>
+          <Switch>
+            <Route exact path="/" component={App} />
+            <Route path="/roster" component={Roster}/>
+            <Route path="/schedule" component={Schedule}/>
+          </Switch>
+        </main> */}
         <AppBar position="static" className={classes.appBar}>
           <Toolbar>
             <Typography variant="title" color="inherit">
@@ -227,71 +183,60 @@ class App extends Component {
             </Typography>
           </Toolbar>
         </AppBar>
-        <IconButton onClick={() => this.ChangeView(0)} aria-label="view-list">
-          <ListIcon />
-        </IconButton>
-        <IconButton onClick={() => this.ChangeView(1)} aria-label="view-list">
-          <ListIcon />
-        </IconButton>
-        <IconButton onClick={() => this.ChangeView(2)} aria-label="view-list">
-          <ListIcon />
-        </IconButton>
-        <IconButton onClick={() => this.ChangeView(3)} aria-label="view-list">
-          <ListIcon />
-        </IconButton>
+        {/* <nav><Link to="/dashboard">Dashboard</Link></nav>
+        <div>
+          <Route path="/dashboard" 
+            component={() => {<div>"hey"</div>}
+          }/>
+        </div> */}
+        <span style={{}}>
+          <IconButton onClick={() => this.ChangeView(0)} aria-label="view-list">
+            <ListIcon />
+          </IconButton>
+          <IconButton onClick={() => this.ChangeView(1)} aria-label="view-list">
+            <ListIcon />
+          </IconButton>
+        </span>
         {this.state.viewMode === 0 ? (
-        <div className="planets">
-          <List component="nav" className="planets-list">
-            {planetItems}
-          </List>
-          <Card style={{maxWidth: 800}} className="planet-info">
+          <div className="planets">
+            <List component="nav" className="planets-list">
+              {this.planetItems(classes)}
+            </List>
             {this.state.selectedPlanet !== null ? (
-              <div>
-                <CardHeader title={this.state.selectedPlanet.name} />
-                <CardMedia src={this.state.selectedPlanet.image}>
-                <img className="planet-image"
-                src={this.state.selectedPlanet.image} />
-                </CardMedia>
-                <CardContent>
-                <p className="planet-distance">
-                  Distance from sun: {this.state.selectedPlanet.distance}
-                </p>
-                <p className="planet-mass">
-                  Mass: {this.state.selectedPlanet.mass}
-                </p>
-                <p className="planet-diameter">
-                  Diameter: {this.state.selectedPlanet.diameter}
-                </p>
-                </CardContent>
-                <CardActions>
-                  <a href="https://en.wikipedia.org/wiki/Earth" target="_blank"
-                  style={{textDecoration:'none'}}>
-                    <Button size="small" color="primary">
-                      Learn More
-                    </Button>
-                  </a>
-                </CardActions>
-              </div>
+              <PlanetCard
+                classes={{
+                  planetCard: classes.style1planetCard,
+                  image: classes.style1image,
+                  header: classes.style1header,
+                  content: classes.style1content,
+                  info: classes.style1info,
+                  description: classes.style1description,
+                  actions: classes.style1actions,
+                }}
+                planet={this.state.selectedPlanet}
+                onPlanetClick={this.onPlanetClick}
+              />
             ) : (
-
-              <CardHeader title='No planet selected' />
+              <Card className="planet-info-card" style={{ height: '100%' }}>
+                <CardHeader title="No planet selected" />
+              </Card>
             )}
-          </Card>
-        </div>
+          </div>
         ) : (
-          <div className="planets" style={{flex:'1 0 auto'}}>
-            <span component="nav" className="planets-list"  style={{display:'flex', flexDirection:'row', flexWrap:'wrap'}}>
-              {planetItems}
+          <div className="planets" style={{ flex: '1 0 auto' }}>
+            <span component="nav" className="planets-list" style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap' }}>
+              {this.planetItems(classes)}
             </span>
           </div>
         )}
-        <div className='footer'>
-        <p>Copyright © 2018 PRETTYPLANETS All rights reserved.</p>
+        <div className="footer">
+          <p>
+            Copyright © 2018 PRETTYPLANETS All rights reserved.
+          </p>
         </div>
       </div>
     );
   }
 }
 
-//export default App;
 export default withStyles(styles)(App);
