@@ -23,23 +23,6 @@ import PlanetCard from './components/PlanetCard';
 
 const apiUrl = 'http://planetsapi20180630123940.azurewebsites.net/';
 
-const theme = createMuiTheme({
-  palette: {
-    primary: {
-      light: '#757ce8',
-      main: '#3f50b5',
-      dark: '#002884',
-      contrastText: '#fff',
-    },
-    secondary: {
-      light: '#ff7961',
-      main: '#f44336',
-      dark: '#ba000d',
-      contrastText: '#000',
-    },
-  },
-});
-
 const styles = {
   appBar: {
     background: 'linear-gradient(45deg, #0F2027 5%, #2C5364 90%)',
