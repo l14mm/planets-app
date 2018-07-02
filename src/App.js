@@ -21,6 +21,8 @@ import AddIcon from '@material-ui/icons/Add';
 import Snackbar from '@material-ui/core/Snackbar';
 import CloseIcon from '@material-ui/icons/Close';
 import green from '@material-ui/core/colors/green';
+import red from '@material-ui/core/colors/red';
+import ErrorIcon from '@material-ui/icons/Error';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 import SnackbarContent from '@material-ui/core/SnackbarContent';
 
@@ -35,7 +37,7 @@ import style1 from './style1';
 import style2 from './style2';
 import { CardContent } from '@material-ui/core';
 
-const apiUrl = 'http://planetsapi20180630123940.azurewebsites.net/';
+const apiUrl = 'http://planetsapi20180630123940.azurewebsites.net/api/';
 
 const styles = {
   appBar: {
@@ -48,6 +50,20 @@ const styles = {
   },
   appPlanetCard: {
     backgroundColor: 'red'
+  },
+  successSnackbar: {
+    backgroundColor: green[700]
+  }, 
+  errorSnackbar: {
+    backgroundColor: red[900]
+  }, 
+  snackbarIcon: {
+    marginRight: '5px',
+  },
+  message: {
+    display: 'flex',
+    alignItems: 'center',
+    fontSize:'20px'
   }
 };
 
@@ -86,12 +102,18 @@ class App extends Component {
       planets: null,
       isAddingPlanet: false,
       numberformat: "1234",
-      open: true,
+      successSnackbarOpen: false,
+      errorSnackbarOpen: false,
+      errorMessage: "Error!",
+      successMessage: "Success!",
     };
     this.SelectPlanet.bind(this);
     this.ChangeView.bind(this);
     this.RenderAddPlanetCard.bind(this);
     this.RetrievePlanets.bind(this);
+    this.HandleInputChange = this.HandleInputChange.bind(this);
+    this.handleNewPlanetSubmit = this.handleNewPlanetSubmit.bind(this);
+    this.clearNewPlanetForm = this.clearNewPlanetForm.bind(this);
     this.RetrievePlanets();
     this.SelectPlanet('earth');
     this.checkRoute();
@@ -104,7 +126,7 @@ class App extends Component {
   }
 
   SelectPlanet(planetName) {
-    return fetch(`${apiUrl}api/planets/${planetName}`)
+    return fetch(`${apiUrl}planets/${planetName}`)
       .then(response => response.json())
       .then((responseJson) => {
         this.setState({ selectedPlanet: responseJson });
@@ -119,7 +141,7 @@ class App extends Component {
   }
 
   RetrievePlanets() {
-    return fetch(`${apiUrl}api/planets/getall`)
+    return fetch(`${apiUrl}planets/getall`)
       .then(response => response.json())
       .then((responseJson) => {
         this.setState({ planets: responseJson });
@@ -158,6 +180,96 @@ class App extends Component {
       ));
   }
 
+  HandleInputChange(event) {
+    const target = event.target;
+    const id = target.id;
+    const value = target.value;
+    this.setState({[id]:value});
+    // console.log(id + ":" + value);
+  }
+
+  clearNewPlanetForm() {
+    this.setState({
+      newplanetname:undefined,
+      newplanetdistance:undefined,
+      newplanetmass:undefined,
+      newplanetdiameter:undefined,
+      newplanetdescription:undefined,
+    });
+  }
+
+  validateOnlyContainsLetters(value, errorMessage) {
+    if (value.match(/^[a-zA-Z]+$/)) {
+      return true;
+    }
+    this.setState({
+      errorMessage: errorMessage,
+      errorSnackbarOpen: true,
+    });
+    return false;
+  }
+
+  validateUrl(value, errorMessage) {
+    if (value.match(/((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=\+\$,\w]+@)?[A-Za-z0-9.-]+|(?:www.|[-;:&=\+\$,\w]+@)[A-Za-z0-9.-]+)((?:\/[\+~%\/.\w-_]*)?\??(?:[-\+=&;%@.\w_]*)#?(?:[\w]*))?)/)) {
+      return true;
+    }
+    this.setState({
+      errorMessage: errorMessage,
+      errorSnackbarOpen: true,
+    });
+    return false;
+  }
+
+  validateIsNotNullOrEmpty(value, errorMessage) {
+    if (value !== undefined && value.length > 0) {
+      return true;
+    }
+    // console.log("error: " + value);
+    this.setState({
+      errorMessage: errorMessage,
+      errorSnackbarOpen: true,
+    });
+    return false;
+  }
+
+  handleNewPlanetSubmit() {
+
+    if (this.validateIsNotNullOrEmpty(this.state.newplanetname, "Error: planet needs a name!")
+    && this.validateOnlyContainsLetters(this.state.newplanetname, "Error: planet name shouldn't contain numbers!")
+    && this.validateIsNotNullOrEmpty(this.state.newplanetdistance, "Error: planet needs a distance!")
+    && this.validateIsNotNullOrEmpty(this.state.newplanetmass, "Error: planet needs a mass!")
+    && this.validateIsNotNullOrEmpty(this.state.newplanetdiameter, "Error: planet needs a diameter!")
+    && this.validateIsNotNullOrEmpty(this.state.newplanetdescription, "Error: planet needs a description!")
+    && this.validateIsNotNullOrEmpty(this.state.newplaneturl, "Error: planet needs a wikipedia url!")
+    && this.validateUrl(this.state.newplaneturl, "Error: incorrect wikipedia url!")
+    && this.validateIsNotNullOrEmpty(this.state.newplanetimage, "Error: planet needs an image!")
+    && this.validateUrl(this.state.newplanetimage, "Error: incorrect image url!")
+    ) {
+      this.clearNewPlanetForm();
+      this.setState({
+        isAddingPlanet: false,
+        successMessage: this.state.newplanetname + " created!",
+        successSnackbarOpen: true
+      });
+      fetch(apiUrl + 'planets', {
+        method: 'POST',
+        headers: {
+          // 'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            "name": this.state.newplanetname,
+            "image": this.state.newplanetimage,
+            "distance": this.state.newplanetdistance,
+            "mass": this.state.newplanetmass,
+            "diameter": this.state.newplanetdiameter+"km",
+            "description": this.state.newplanetdescription,
+            "link": this.state.newplaneturl,
+        })
+      })
+    }
+  }
+
   RenderAddPlanetCard(classes) {
     return <span style={{ padding: '5px' }}>
     <Card type="button" style={{
@@ -180,47 +292,81 @@ class App extends Component {
         </CardActions>
       </div>) : (
         <div>
+        {/* <form className={classes.container} noValidate autoComplete="off"> */}
           <TextField
-            id="with-placeholder"
+            required
+            id="newplanetname"
             label="Name"
             className={classes.textField}
             margin="normal"
+            value={this.state.newplanetname}
+            onChange={this.HandleInputChange}
           />
           <TextField
-            id="with-placeholder"
+            required
+            id="newplanetdistance"
             label="Distance from sun"
             className={classes.textField}
             margin="normal"
+            value={this.state.newplanetdistance}
+            onChange={this.HandleInputChange}
           />
           <TextField
-            id="with-placeholder"
+            required
+            id="newplanetmass"
             label="Mass"
             className={classes.textField}
             margin="normal"
+            value={this.state.newplanetmass}
+            onChange={this.HandleInputChange}
           />
           <TextField
-            className={classes.formControl}
-            label="Diameter"
-            value={this.state.numberformat}
-            //onChange={this.handleChange('numberformat')}
-            id="formatted-numberformat-input"
-            InputProps={{
-              inputComponent: NumberFormatCustom,
-            }}
-          />
-          <TextField
-            id="with-placeholder"
-            label="Description"
+            required
+            id="newplanetdiameter"
+            label="Diameter (km)"
+            value={this.state.newplanetdiameter}
+            onChange={this.HandleInputChange}
+            type="number"
             className={classes.textField}
             margin="normal"
           />
+          <TextField
+            required
+            id="newplanetdescription"
+            label="Description"
+            className={classes.textField}
+            margin="normal"
+            value={this.state.newplanetdescription}
+            onChange={this.HandleInputChange}
+          />
+          <TextField
+            required
+            id="newplaneturl"
+            label="Wikipedia page"
+            className={classes.textField}
+            margin="normal"
+            value={this.state.newplaneturl}
+            onChange={this.HandleInputChange}
+          />
+          <TextField
+            required
+            id="newplanetimage"
+            label="Image url"
+            className={classes.textField}
+            margin="normal"
+            value={this.state.newplanetimage}
+            onChange={this.HandleInputChange}
+          />
+        {/* </form> */}
           <div style={{paddingTop:'20px'}}>
             <Button variant="contained" color="primary" className={classes.button}
-            style={{margin:'10px'}} onClick={()=>{this.setState({isAddingPlanet:false})}}>
+            style={{margin:'10px'}} 
+            onClick={()=>{
+              this.clearNewPlanetForm();
+              this.setState({isAddingPlanet:false})}}>
               Cancel
             </Button>
-            <Button variant="contained" color="secondary" className={classes.button} style={{margin:'10px'}} onClick={()=>{this.setState({isAddingPlanet:false})}}
-            //disabled
+            <Button variant="contained" color="secondary" className={classes.button} style={{margin:'10px'}} onClick={this.handleNewPlanetSubmit}
             >
               Save
             </Button>
@@ -256,33 +402,65 @@ class App extends Component {
             vertical: 'bottom',
             horizontal: 'left',
           }}
-          open={this.state.open}
+          open={this.state.successSnackbarOpen}
           autoHideDuration={6000}
-          // onClose={this.handleClose}
+          onClose={()=>{this.setState({successSnackbarOpen:false})}}
         >
-    <SnackbarContent
-      //className={classNames(classes[variant], className)}
-      className={{backgroundColor: green[600]}}
-      aria-describedby="client-snackbar"
-      message={
-        <span id="client-snackbar" className="classnamemessage">
-          <CheckCircleIcon className="classnameicon" />
-          "my message"
-        </span>
-      }
-      // action={[
-      //   <IconButton
-      //     key="close"
-      //     aria-label="Close"
-      //     color="inherit"
-      //     className="close"
-      //     //onClick={onClose}
-      //   >
-      //     <CloseIcon className="classnameicon" />
-      //   </IconButton>,
-      // ]}
-    />
-    </Snackbar>
+          <SnackbarContent
+            //className={classNames(classes[variant], className)}
+            className={classes["successSnackbar"]}
+            aria-describedby="client-snackbar"
+            message={
+              <span id="client-snackbar" className={classes.message}>
+                <CheckCircleIcon className={classes.snackbarIcon} />
+                {this.state.successMessage}
+              </span>
+            }
+            action={[
+              <IconButton
+                key="close"
+                aria-label="Close"
+                color="inherit"
+                className="close"
+                onClick={()=>{this.setState({successSnackbarOpen:false})}}
+              >
+                <CloseIcon className="classnameicon" />
+              </IconButton>,
+            ]}
+          />
+        </Snackbar>
+        <Snackbar
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'left',
+          }}
+          open={this.state.errorSnackbarOpen}
+          autoHideDuration={6000}
+          onClose={()=>{this.setState({errorSnackbarOpen:false})}}
+        >
+          <SnackbarContent
+            //className={classNames(classes[variant], className)}
+            className={classes["errorSnackbar"]}
+            aria-describedby="client-snackbar"
+            message={
+              <span id="client-snackbar" className={classes.message}>
+                <ErrorIcon className={classes.snackbarIcon} />
+                {this.state.errorMessage}
+              </span>
+            }
+            action={[
+              <IconButton
+                key="close"
+                aria-label="Close"
+                color="inherit"
+                className="close"
+                onClick={()=>{this.setState({errorSnackbarOpen:false})}}
+              >
+                <CloseIcon className="classnameicon" />
+              </IconButton>,
+            ]}
+          />
+        </Snackbar>
 
         <span style={{}}>
           <IconButton onClick={() => this.ChangeView(0)} aria-label="view-list">
@@ -315,8 +493,8 @@ class App extends Component {
         ) : (
           <div className="planets" style={{ flex: '1 0 auto' }}>
             <span component="nav" className="planets-list" style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap' }}>
-              {this.RenderAddPlanetCard(classes)}
               {this.RenderPlanetList(classes)}
+              {this.RenderAddPlanetCard(classes)}
             </span>
           </div>
         )}
