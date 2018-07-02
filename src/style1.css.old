@@ -1,0 +1,23 @@
+  planetCard {
+    flex: 2;
+    display: 'inline-flex';
+    flex-direction: 'row';
+    margin: '20px';
+    flex-wrap: 'wrap';
+    align-self: 'flex-start';
+  }
+  media {
+    flex: 1;
+    display: grid;
+    background-color: black;
+  }
+  image {
+    width: 100%;
+    min-width: 200px;
+  }
+  header {background-color:white; color:black;display:block}
+  contentContainer {flex:1;flex-shrink:1;text-align:left;float:left;display:block}
+  content {background-color:white;color:black;display:block;min-width:200px}
+  info {font-size:12px;padding-bottom:2px;display:block}
+  description {font-size:12px}
+  actions {background-color:white;color:black;display:block}

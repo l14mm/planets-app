@@ -15,7 +15,16 @@
   padding: 10px;
   height: 100%;
   padding-bottom: 30px;
+
+  flex: 1 0 auto;
 }
+/* .planets:after {
+    content: '\00a0';
+    display: block;
+    margin-top: var(--space);
+    height: 0;
+    visibility: hidden;
+} */
 .planets-list {
   flex: 1;
 }
