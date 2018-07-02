@@ -40,19 +40,44 @@ const styles = {
     color: 'white',
   },
   
+  // style1planetCard:  {
+  //   display: 'flex', 
+  //   flexDirection: 'row', 
+  //   flex: '2 1 0%',
+  //   margin: '20px',
+  //   textAlign: 'left',
+  //   flex: 4,
+  //   margin: '20px',
+  //   height: '100%',
+  // },
+  // style1media: {display:'block'},
+  // style1image: {display:'inline-block', height:'500px', width:'500px'},
+  // style1header: {backgroundColor:'white', color:'black',display:'block'},
+  // style1content: {backgroundColor:'white',color:'black',display:'block'},
+  // style1info: {fontSize:'12px',paddingBottom:'2px',display:'block'},
+  // style1description: {fontSize:'12px'},
+  // style1actions: {backgroundColor:'white',color:'black',display:'block'},
+
   style1planetCard:  {
-    display: 'flex', 
+    flex: 2,
+    display: 'inline-flex', 
     flexDirection: 'row', 
-    flex: '2 1 0%',
-    margin: '20px',
-    textAlign: 'left',
-    flex: 4,
-    margin: '20px',
-    height: '100%',
+    margin: '20px', 
+    flexWrap:'wrap',
+    alignSelf:'flex-start'
   },
-  style1media: {display:'block'},
-  style1image: {display:'inline-block', height:'500px', width:'500px'},
+  style1media: {
+    flex: 1,
+    display: 'grid',
+    // float:'left',
+    // flexShrink:1
+  },
+  style1image: {
+    width: '100%',
+    minWidth:'200px '
+  },
   style1header: {backgroundColor:'white', color:'black',display:'block'},
+  style1contentContainer: {flex:1,flexShrink:1,textAlign:'left',float:'left',display:'block'},
   style1content: {backgroundColor:'white',color:'black',display:'block'},
   style1info: {fontSize:'12px',paddingBottom:'2px',display:'block'},
   style1description: {fontSize:'12px'},
@@ -86,6 +111,7 @@ class App extends Component {
     this.RetrievePlanets.bind(this);
     this.RetrievePlanets();
     this.onPlanetClick("earth");
+    this.checkRoute();
   }
 
   onPlanetClick(planetName) {
@@ -148,17 +174,26 @@ class App extends Component {
       ));
   }
 
+
+  componentDidUpdate(prevProps) {
+    if (this.props.location !== prevProps.location) {
+      this.checkRoute();
+    }
+  }
+
+  // Check if url is requesting to view a specific planet
+  checkRoute() {
+    const splitPath = this.props.location.pathname.split('/');
+    const planet = splitPath[splitPath.length - 1];
+    if (planet != null) {
+      this.onPlanetClick(planet);
+    }
+  }
+
   render() {
     const { classes } = this.props;
     return (
       <div className="App">
-        {/* <main>
-          <Switch>
-            <Route exact path="/" component={App} />
-            <Route path="/roster" component={Roster}/>
-            <Route path="/schedule" component={Schedule}/>
-          </Switch>
-        </main> */}
         <AppBar position="static" className={classes.appBar}>
           <Toolbar>
             <Typography variant="title" color="inherit">
@@ -166,12 +201,6 @@ class App extends Component {
             </Typography>
           </Toolbar>
         </AppBar>
-        {/* <nav><Link to="/dashboard">Dashboard</Link></nav>
-        <div>
-          <Route path="/dashboard" 
-            component={() => {<div>"hey"</div>}
-          }/>
-        </div> */}
         <span style={{}}>
           <IconButton onClick={() => this.ChangeView(0)} aria-label="view-list">
             <ListIcon />
@@ -189,7 +218,9 @@ class App extends Component {
               <PlanetCard
                 classes={{
                   planetCard: classes.style1planetCard,
+                  media: classes.style1media,
                   image: classes.style1image,
+                  contentContainer: classes.style1contentContainer,
                   header: classes.style1header,
                   content: classes.style1content,
                   info: classes.style1info,

@@ -11,18 +11,32 @@ import CardHeader from '@material-ui/core/CardHeader';
 // default styles
 export const styles = theme => ({
     planetCard:  {
-        width:'300px', 
-        margin: '2px',
-        textAlign: 'left',
-        fontSize: '0px'
+        // width:'300px', 
+        // margin: '2px',
+        // textAlign: 'left',
+        // fontSize: '0px'
     },
-    image: {width: '100%'},
-    header: {backgroundColor:'black', color:'white'},
-    content: {backgroundColor:'black',color:'white'},
-    info: {fontSize:'12px',paddingBottom:'2px'},
-    description: {fontSize:'12px'},
-    actions: {backgroundColor:'black',color:'white'},
-    randomo: {}
+    image: {
+        // width: '100%'
+    },
+    header: {
+        // backgroundColor:'black', color:'white'
+    },
+    content: {
+        // backgroundColor:'black',color:'white'
+    },
+    info: {
+        // fontSize:'12px',paddingBottom:'2px'
+    },
+    description: {
+        // fontSize:'12px'
+    },
+    actions: {
+        // backgroundColor:'black',color:'white'
+    },
+    contentContainer: {
+        // flex:1
+    }
 });
 
 
@@ -33,14 +47,13 @@ class PlanetCard extends Component {
 
     render() {
         const { classes } = this.props;
-        console.log(classes);
         return (
             <Card type="button" className={classes.planetCard}>
             <CardMedia src={this.props.planet.image} className={classes.media}>
                 <img className="planet-image" className={classes.image}
                 src={this.props.planet.image} />
             </CardMedia>
-            <div>
+            <div className={classes.contentContainer}>
                 <CardHeader title={this.props.planet.name} classes={{title:classes.header}} className={classes.header + " header"} size='20px'/>
                 <CardContent className={classes.content + " content"}>
                     <p className={classes.info}>
@@ -53,7 +66,7 @@ class PlanetCard extends Component {
                     Diameter: {this.props.planet.diameter + " diameter"}
                     </p>
                     <p className={classes.description + " description"}>
-                    {this.props.planet.description.substring(0, 300) + "..."}
+                    {this.props.planet.description.substring(0, 100) + "..."}
                     </p>
                 </CardContent>
                 <CardActions className={classes.actions + " actions"}>

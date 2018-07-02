@@ -17,7 +17,7 @@
   padding-bottom: 30px;
 }
 .planets-list {
-  flex: 2;
+  flex: 1;
 }
 .planet-container {
   /* border: 2px black solid; */
@@ -41,5 +41,3 @@
   padding-left: 20px;
   margin: 0;
 }
-
-/* .planetCardStyle2 */
