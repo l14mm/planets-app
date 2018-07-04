@@ -10,14 +10,15 @@ import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
 import Divider from '@material-ui/core/Divider';
-import CardHeader from '@material-ui/core/CardHeader';
-import ListIcon from '@material-ui/icons/List';
 import IconButton from '@material-ui/core/IconButton';
 import PlanetCard from './components/PlanetCard';
 import CardActions from '@material-ui/core/CardActions';
 import Button from '@material-ui/core/Button';
 import AddIcon from '@material-ui/icons/Add';
-
+import CircularProgress from '@material-ui/core/CircularProgress';
+import Fade from '@material-ui/core/Fade';
+import Tabs from '@material-ui/core/Tabs';
+import Tab from '@material-ui/core/Tab';
 import Snackbar from '@material-ui/core/Snackbar';
 import CloseIcon from '@material-ui/icons/Close';
 import green from '@material-ui/core/colors/green';
@@ -25,14 +26,9 @@ import red from '@material-ui/core/colors/red';
 import ErrorIcon from '@material-ui/icons/Error';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 import SnackbarContent from '@material-ui/core/SnackbarContent';
-
 import NumberFormat from "react-number-format";
-import Input from "@material-ui/core/Input";
-import InputLabel from "@material-ui/core/InputLabel";
 import TextField from "@material-ui/core/TextField";
-import FormControl from "@material-ui/core/FormControl";
-
-
+import { ValidateOnlyContainsLetters, ValidateUniqueValue, ValidateUrl, ValidateIsNotNullOrEmpty } from './helper'
 import style1 from './style1';
 import style2 from './style2';
 import { CardContent } from '@material-ui/core';
@@ -41,7 +37,7 @@ const apiUrl = 'http://planetsapi20180630123940.azurewebsites.net/api/';
 
 const styles = {
   appBar: {
-    background: 'linear-gradient(45deg, #0F2027 5%, #2C5364 90%)',
+    background: 'linear-gradient(to right, #141e30, #243b55)',
     color: 'white',
   },
   style2header: {
@@ -67,6 +63,7 @@ const styles = {
   }
 };
 
+// Custom number format used for planet diameter entry field.
 function NumberFormatCustom(props) {
   const { inputRef, onChange, ...other } = props;
 
@@ -97,7 +94,7 @@ class App extends Component {
     super(props);
 
     this.state = {
-      viewMode: 1,
+      viewMode: 0,
       selectedPlanet: null,
       planets: null,
       isAddingPlanet: false,
@@ -106,26 +103,51 @@ class App extends Component {
       errorSnackbarOpen: false,
       errorMessage: "Error!",
       successMessage: "Success!",
+      query: 'success',
     };
-    this.SelectPlanet.bind(this);
-    this.ChangeView.bind(this);
-    this.RenderAddPlanetCard.bind(this);
-    this.RetrievePlanets.bind(this);
-    this.HandleInputChange = this.HandleInputChange.bind(this);
+    this.selectPlanet.bind(this);
+    this.changeView.bind(this);
+    this.renderAddPlanetCard.bind(this);
+    this.retrievePlanets.bind(this);
+    this.handleInputChange = this.handleInputChange.bind(this);
     this.handleNewPlanetSubmit = this.handleNewPlanetSubmit.bind(this);
     this.clearNewPlanetForm = this.clearNewPlanetForm.bind(this);
-    this.RetrievePlanets();
-    this.SelectPlanet('earth');
-    this.checkRoute();
+    this.refreshPage.bind(this);
+
+    this.retrievePlanets();
+  }
+
+  // Used to simulate a page load by using a spinner.
+  refreshPage() {
+    // Starts the spinner.
+    this.setState({
+      query: 'progress',
+    });
+    // Stops the load spinner after 2 seconds.
+    this.timer = setTimeout(() => {
+      this.setState({
+        query: 'success',
+      });
+    }, 2e4);
+  };
+
+  componentDidMount() {
+    // Simulate a load then show the 1st view.
+    this.refreshPage();
+    this.changeView(0);
   }
 
   componentDidUpdate(prevProps) {
+    // Check if the url has changed since last time, if so, then check if anything is being requested.
     if (this.props.location !== prevProps.location) {
       this.checkRoute();
     }
   }
 
-  SelectPlanet(planetName) {
+  // Selects the planet with name for its info to be displayed.
+  selectPlanet(planetName) {
+    if (this.state.planets === null)
+      return;
     return fetch(`${apiUrl}planets/${planetName}`)
       .then(response => response.json())
       .then((responseJson) => {
@@ -136,27 +158,39 @@ class App extends Component {
       });
   }
 
-  ChangeView(newMode) {
+  // Changes the type of view.
+  changeView(newMode) {
     this.setState({ viewMode: newMode });
+    this.refreshPage();
+    this.timer = setTimeout(() => {
+      this.setState({
+        query: 'success',
+      });
+    }, 2e3);
   }
 
-  RetrievePlanets() {
+  // GETS a list of all the planets.
+  retrievePlanets() {
     return fetch(`${apiUrl}planets/getall`)
       .then(response => response.json())
       .then((responseJson) => {
         this.setState({ planets: responseJson });
+        this.checkRoute();
+        this.refreshPage();
       })
       .catch((error) => {
         console.error(error);
       });
   }
 
-  RenderPlanetList(classes) {
+  // Renders a list of planets according to which view mode is selected,
+  // either a list of planet names, or a list of planet cards.
+  renderPlanetList(classes) {
     return this.state.planets === null ? null
       : this.state.planets.map((planet, i) => (
         this.state.viewMode === 0 ? (
           <div>
-            <ListItem onClick={() => this.SelectPlanet(planet.name)} type="button" key={`${planet.name}-${planet.id}`} className="planet-container" button>
+            <ListItem onClick={() => this.selectPlanet(planet.name)} type="button" key={`${planet.name}-${planet.id}`} className="planet-container" button>
               <ListItemText>
                 <p>
                   {planet.name}
@@ -180,14 +214,15 @@ class App extends Component {
       ));
   }
 
-  HandleInputChange(event) {
+  // Handles an input change event by storing the value of the field in state.
+  handleInputChange(event) {
     const target = event.target;
     const id = target.id;
     const value = target.value;
     this.setState({[id]:value});
-    // console.log(id + ":" + value);
   }
 
+  // Clears all fields in the new planet form.
   clearNewPlanetForm() {
     this.setState({
       newplanetname:undefined,
@@ -195,55 +230,25 @@ class App extends Component {
       newplanetmass:undefined,
       newplanetdiameter:undefined,
       newplanetdescription:undefined,
+      newplaneturl:undefined,
+      newplanetimage:undefined,
     });
   }
 
-  validateOnlyContainsLetters(value, errorMessage) {
-    if (value.match(/^[a-zA-Z]+$/)) {
-      return true;
-    }
-    this.setState({
-      errorMessage: errorMessage,
-      errorSnackbarOpen: true,
-    });
-    return false;
-  }
-
-  validateUrl(value, errorMessage) {
-    if (value.match(/((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=\+\$,\w]+@)?[A-Za-z0-9.-]+|(?:www.|[-;:&=\+\$,\w]+@)[A-Za-z0-9.-]+)((?:\/[\+~%\/.\w-_]*)?\??(?:[-\+=&;%@.\w_]*)#?(?:[\w]*))?)/)) {
-      return true;
-    }
-    this.setState({
-      errorMessage: errorMessage,
-      errorSnackbarOpen: true,
-    });
-    return false;
-  }
-
-  validateIsNotNullOrEmpty(value, errorMessage) {
-    if (value !== undefined && value.length > 0) {
-      return true;
-    }
-    // console.log("error: " + value);
-    this.setState({
-      errorMessage: errorMessage,
-      errorSnackbarOpen: true,
-    });
-    return false;
-  }
-
+  // Retrieve new planet form values from state then POST to api, then refresh page.
   handleNewPlanetSubmit() {
-
-    if (this.validateIsNotNullOrEmpty(this.state.newplanetname, "Error: planet needs a name!")
-    && this.validateOnlyContainsLetters(this.state.newplanetname, "Error: planet name shouldn't contain numbers!")
-    && this.validateIsNotNullOrEmpty(this.state.newplanetdistance, "Error: planet needs a distance!")
-    && this.validateIsNotNullOrEmpty(this.state.newplanetmass, "Error: planet needs a mass!")
-    && this.validateIsNotNullOrEmpty(this.state.newplanetdiameter, "Error: planet needs a diameter!")
-    && this.validateIsNotNullOrEmpty(this.state.newplanetdescription, "Error: planet needs a description!")
-    && this.validateIsNotNullOrEmpty(this.state.newplaneturl, "Error: planet needs a wikipedia url!")
-    && this.validateUrl(this.state.newplaneturl, "Error: incorrect wikipedia url!")
-    && this.validateIsNotNullOrEmpty(this.state.newplanetimage, "Error: planet needs an image!")
-    && this.validateUrl(this.state.newplanetimage, "Error: incorrect image url!")
+    const _validateIsNotNullOrEmpty = ValidateIsNotNullOrEmpty.bind(this);
+    if (_validateIsNotNullOrEmpty(this.state.newplanetname, "Error: planet needs a name!")
+    && ValidateUniqueValue.call(this, this.state.planets, 'name', this.state.newplanetname, "Error: planet name already exists!")
+    && ValidateOnlyContainsLetters.call(this, this.state.newplanetname, "Error: planet name should only contain letters!")
+    && _validateIsNotNullOrEmpty(this.state.newplanetdistance, "Error: planet needs a distance!")
+    && _validateIsNotNullOrEmpty(this.state.newplanetmass, "Error: planet needs a mass!")
+    && _validateIsNotNullOrEmpty(this.state.newplanetdiameter, "Error: planet needs a diameter!")
+    && _validateIsNotNullOrEmpty(this.state.newplanetdescription, "Error: planet needs a description!")
+    && _validateIsNotNullOrEmpty(this.state.newplaneturl, "Error: planet needs a wikipedia url!")
+    && ValidateUrl.call(this, this.state.newplaneturl, "Error: incorrect wikipedia url!")
+    && _validateIsNotNullOrEmpty(this.state.newplanetimage, "Error: planet needs an image!")
+    && ValidateUrl.call(this, this.state.newplanetimage, "Error: incorrect image url!")
     ) {
       this.clearNewPlanetForm();
       this.setState({
@@ -254,7 +259,6 @@ class App extends Component {
       fetch(apiUrl + 'planets', {
         method: 'POST',
         headers: {
-          // 'Accept': 'application/json',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -267,10 +271,12 @@ class App extends Component {
             "link": this.state.newplaneturl,
         })
       })
+      this.retrievePlanets();
     }
   }
 
-  RenderAddPlanetCard(classes) {
+  // Renders the card to be able to create/add a new planet.
+  renderAddPlanetCard(classes) {
     return <span style={{ padding: '5px' }}>
     <Card type="button" style={{
       backgroundColor:'white',
@@ -288,11 +294,10 @@ class App extends Component {
           <Button onClick={() => {this.setState({isAddingPlanet: true})}} variant="fab" color="primary" aria-label="add" className={classes.button} style={{textAlign:'centre'}}>
             <AddIcon />
           </Button>
-        <CardActions style={{}}>
+        <CardActions>
         </CardActions>
       </div>) : (
         <div>
-        {/* <form className={classes.container} noValidate autoComplete="off"> */}
           <TextField
             required
             id="newplanetname"
@@ -300,7 +305,7 @@ class App extends Component {
             className={classes.textField}
             margin="normal"
             value={this.state.newplanetname}
-            onChange={this.HandleInputChange}
+            onChange={this.handleInputChange}
           />
           <TextField
             required
@@ -309,7 +314,7 @@ class App extends Component {
             className={classes.textField}
             margin="normal"
             value={this.state.newplanetdistance}
-            onChange={this.HandleInputChange}
+            onChange={this.handleInputChange}
           />
           <TextField
             required
@@ -318,14 +323,14 @@ class App extends Component {
             className={classes.textField}
             margin="normal"
             value={this.state.newplanetmass}
-            onChange={this.HandleInputChange}
+            onChange={this.handleInputChange}
           />
           <TextField
             required
             id="newplanetdiameter"
             label="Diameter (km)"
             value={this.state.newplanetdiameter}
-            onChange={this.HandleInputChange}
+            onChange={this.handleInputChange}
             type="number"
             className={classes.textField}
             margin="normal"
@@ -337,7 +342,7 @@ class App extends Component {
             className={classes.textField}
             margin="normal"
             value={this.state.newplanetdescription}
-            onChange={this.HandleInputChange}
+            onChange={this.handleInputChange}
           />
           <TextField
             required
@@ -346,7 +351,7 @@ class App extends Component {
             className={classes.textField}
             margin="normal"
             value={this.state.newplaneturl}
-            onChange={this.HandleInputChange}
+            onChange={this.handleInputChange}
           />
           <TextField
             required
@@ -355,9 +360,8 @@ class App extends Component {
             className={classes.textField}
             margin="normal"
             value={this.state.newplanetimage}
-            onChange={this.HandleInputChange}
+            onChange={this.handleInputChange}
           />
-        {/* </form> */}
           <div style={{paddingTop:'20px'}}>
             <Button variant="contained" color="primary" className={classes.button}
             style={{margin:'10px'}} 
@@ -377,17 +381,26 @@ class App extends Component {
     </span>;
   }
 
-  // Check if url is requesting to view a specific planet. e.g. /planet/earth
+  // Check the appended url for any requests.
   checkRoute() {
+    // Check for a requested planet name:
+    // /planet/earth - select earth
+    // /planet/mars - select mars
     const splitPath = this.props.location.pathname.split('/');
-    const planet = splitPath[splitPath.length - 1];
-    if (planet != null) {
-      this.SelectPlanet(planet);
+    const planetName = splitPath[splitPath.length - 1];
+    if (planetName !== null) {
+      this.selectPlanet(planetName);
     }
   }
 
+  // Called from the tabs to switch between the view modes.
+  handleChangeTab = (event, value) => {
+    this.changeView(value);
+  };
+
   render() {
     const { classes } = this.props;
+    const { query, viewMode, selectedPlanet } = this.state;
     return (
       <div className="App">
         <AppBar position="static" className={classes.appBar}>
@@ -407,7 +420,6 @@ class App extends Component {
           onClose={()=>{this.setState({successSnackbarOpen:false})}}
         >
           <SnackbarContent
-            //className={classNames(classes[variant], className)}
             className={classes["successSnackbar"]}
             aria-describedby="client-snackbar"
             message={
@@ -435,11 +447,10 @@ class App extends Component {
             horizontal: 'left',
           }}
           open={this.state.errorSnackbarOpen}
-          autoHideDuration={6000}
+          autoHideDuration={3000}
           onClose={()=>{this.setState({errorSnackbarOpen:false})}}
         >
           <SnackbarContent
-            //className={classNames(classes[variant], className)}
             className={classes["errorSnackbar"]}
             aria-describedby="client-snackbar"
             message={
@@ -461,43 +472,78 @@ class App extends Component {
             ]}
           />
         </Snackbar>
-
-        <span style={{}}>
-          <IconButton onClick={() => this.ChangeView(0)} aria-label="view-list">
-            <ListIcon />
-          </IconButton>
-          <IconButton onClick={() => this.ChangeView(1)} aria-label="view-list">
-            <ListIcon />
-          </IconButton>
-        </span>
-        {this.state.viewMode === 0 ? (
-          <div className="planets">
-            <List component="nav" className="planets-list">
-              {this.RenderPlanetList(classes)}
-            </List>
-            {this.state.selectedPlanet !== null ? (
-              <PlanetCard
-                classes={{
-                  header: classes.style1header,
-                }}
-                planet={this.state.selectedPlanet}
-                SelectPlanet={this.SelectPlanet}
-                style={style1}
-              />
+        <Tabs
+          value={viewMode}
+          onChange={this.handleChangeTab}
+          indicatorColor="primary"
+          textColor="primary"
+          fullWidth
+          style={{display:'flex',justifyContent:'center'}}
+        >
+          <Tab label="List Style" />
+          <Tab label="Card Style" />
+        </Tabs>
+        <div className={classes.placeholder} style={{flex: 1}}>
+          {query === 'success' ? (
+          <div>
+            {viewMode === 0 ? (
+              <div className="planets">
+                <List component="nav" className="planets-list">
+                  {this.renderPlanetList(classes)}
+                </List>
+                {selectedPlanet !== null ? (
+                  <PlanetCard
+                    classes={{
+                      header: classes.style1header,
+                    }}
+                    planet={selectedPlanet}
+                    selectPlanet={this.selectPlanet}
+                    style={style1}
+                  />
+                ) : (
+                  <Card className="noSelectedPlanet">
+                    <CardContent>
+                      <p>
+                        Select a planet
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
             ) : (
-              <Card className="planet-info-card" style={{ height: '100%' }}>
-                <CardHeader title="No planet selected" />
-              </Card>
+              <div className="planets" style={{ flex: '1 0 auto' }}>
+                <span component="nav" className="planets-list" style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap' }}>
+                  {this.renderPlanetList(classes)}
+                  {this.renderAddPlanetCard(classes)}
+                </span>
+              </div>
             )}
-          </div>
+        </div>
         ) : (
-          <div className="planets" style={{ flex: '1 0 auto' }}>
-            <span component="nav" className="planets-list" style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap' }}>
-              {this.RenderPlanetList(classes)}
-              {this.RenderAddPlanetCard(classes)}
-            </span>
-          </div>
+        <div style={{paddingTop: '20px'}}>
+          <Fade
+            in={query === 'progress'}
+            style={{
+              transitionDelay: query === 'progress' ? '800ms' : '0ms',
+
+            }}
+            unmountOnExit
+          >
+            <CircularProgress />
+          </Fade>
+          <Fade
+            in={query === 'progress'}
+            style={{
+              transitionDelay: query === 'progress' ? '800ms' : '0ms',
+
+            }}
+            unmountOnExit
+          >
+          <p>Loading planets...</p>
+          </Fade>
+        </div>
         )}
+        </div>
         <div className="footer">
           <p>
             {'Copyright © 2018 PRETTYPLANETS All rights reserved.'}

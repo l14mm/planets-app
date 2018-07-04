@@ -18,28 +18,21 @@
 
   flex: 1 0 auto;
 }
-/* .planets:after {
-    content: '\00a0';
-    display: block;
-    margin-top: var(--space);
-    height: 0;
-    visibility: hidden;
-} */
 .planets-list {
   flex: 1;
 }
 .planet-container {
-  /* border: 2px black solid; */
   margin: 10px;
   text-align: left;
   font-size: 30px;
   width: 100%;
 }
-.appbar {
-  background-color: 'linear-gradient(to right bottom, #430089, #82ffa1)';
+.noSelectedPlanet {
+  height: 100%;
+  margin: 20px;
 }
 .footer{
-  background-color: rgb(15,32,39);
+  background: linear-gradient(to right, #141e30, #243b55);
   width: 100%;
   height: 30px;
   text-align: left;

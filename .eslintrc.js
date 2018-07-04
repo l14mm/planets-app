@@ -4,7 +4,8 @@ module.exports = {
         "react/jsx-filename-extension": [0],
         "react/destructuring-assignment": [0],
         "react/jsx-no-undef": [0],
-        "linebreak-style": ["error", "windows"]
+        "linebreak-style": [0],
+        // "linebreak-style": ["error", "windows"]
     },
     "env": { 
         "browser": true,
