@@ -44,7 +44,7 @@ function PlanetCard(props) {
         </CardContent>
         <CardActions style={style.actions}>
           <a
-            href={`//${props.planet.link}`}
+            href={props.planet.link}
             target="_blank"
             rel="noopener noreferrer"
             style={{
